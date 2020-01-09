@@ -2,7 +2,7 @@
 
 #include <compare>
 #include <algorithm>
-#include <array>
+#include <vector>
 
 // Level 0 -> Spaceship operator
 // Level 1 -> Iterators for your type useful for a library
@@ -38,7 +38,7 @@ struct SomethingIwantToCompare
 
 struct MyContainer
 {
-	std::array<int, 10> values;
+	std::vector<int> values;
 
 	struct iterator
 	{
@@ -74,8 +74,8 @@ struct MyContainer
 		pointer current_element;
 	};
 
-	iterator begin(){ return iterator{ *this, &*values.begin() }; };
-	iterator end(){ return iterator{ *this, &*values.end() }; };
+	iterator begin(){ return iterator{ *this, values.data() }; };
+	iterator end(){ return iterator{ *this, values.data() + values.size() }; };
 
 	auto operator<=>(const MyContainer&)const = default;
 };
@@ -86,3 +86,4 @@ struct MyContainer
 // Overload resolution takes into account synthesized expressions after all other so no ambiguity if you want to define only some of your own comparison operators
 // A custom 3 way comparison is not used as overload resolution for equality, reasons are performance, e.g. lexicographical comparison of strings compares each character, while testing for equality you can test for equal sizes first then no loop is required.
 // Don't try to dereference an .end iterator even if you never plan to do anything with the element.
+// + takes precedence over any * -> & operators
