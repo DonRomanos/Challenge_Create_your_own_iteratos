@@ -1,4 +1,5 @@
-#include <iostream>
+#pragma once
+
 #include <compare>
 #include <algorithm>
 #include <array>
@@ -82,32 +83,3 @@ struct MyContainer
 // 3 Way comparison works by giving you an ordering in the form of e.g. std::strong_ordering::less (which is a typedef for -1? I believe) the compiler uses that to synthesize the wanted expression, e.g. (4 <=> 5) < 0 for <operator
 // Overload resolution takes into account synthesized expressions after all other so no ambiguity if you want to define only some of your own comparison operators
 // A custom 3 way comparison is not used as overload resolution for equality, reasons are performance, e.g. lexicographical comparison of strings compares each character, while testing for equality you can test for equal sizes first then no loop is required.
-int main()
-{
-	std::cout << "Helloooo" << std::endl;
-	auto value1 = SomethingIwantToCompare{ 10 };
-	auto value2 = SomethingIwantToCompare{ 20 };
-
-	if (value1 < value2)
-	{
-		std::cout << "Smaller" << std::endl;
-	}
-	else if(value1 > value2)
-	{
-		std::cout << "Larger" << std::endl;
-	}
-	else if( value1 == value2)
-	{
-		std::cout << "Equal" << std::endl;
-	}
-	else if( value1 != value2)
-	{
-		std::cout << "Unequal" << std::endl;
-	}
-
-	std::cin.get();
-
-	MyContainer to_sort{ .values = {1,2,3,4} }; // Using aggregate initialization with a designated name parameter.
-	std::sort(std::begin(to_sort), std::end(to_sort));
-
-}
