@@ -76,6 +76,8 @@ struct MyContainer
 
 	iterator begin(){ return iterator{ *this, &*values.begin() }; };
 	iterator end(){ return iterator{ *this, &*values.end() }; };
+
+	auto operator<=>(const MyContainer&)const = default;
 };
 
 // Learnings;
@@ -83,3 +85,4 @@ struct MyContainer
 // 3 Way comparison works by giving you an ordering in the form of e.g. std::strong_ordering::less (which is a typedef for -1? I believe) the compiler uses that to synthesize the wanted expression, e.g. (4 <=> 5) < 0 for <operator
 // Overload resolution takes into account synthesized expressions after all other so no ambiguity if you want to define only some of your own comparison operators
 // A custom 3 way comparison is not used as overload resolution for equality, reasons are performance, e.g. lexicographical comparison of strings compares each character, while testing for equality you can test for equal sizes first then no loop is required.
+// Don't try to dereference an .end iterator even if you never plan to do anything with the element.
