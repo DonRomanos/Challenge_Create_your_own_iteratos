@@ -63,6 +63,19 @@ TYPED_TEST_P(CustomCollectionTests, Find_can_be_used_on_NON_const_container)
     EXPECT_EQ(*result, to_find);
 }
 
+// My Compiler does not have support for ranges yet...
+//TYPED_TEST_P(CustomCollectionTests, Container_works_with_ranges)
+//{
+//    // Example: print only even values in reverse order
+//    TypeParam container{ .values = {1,2,3,4,5,6,7} };
+//    const std::vector<int> expected = { 6,4,2 };
+//
+//    auto is_even = [](auto x) { return x % 2 == 0; };
+//    auto result = container | std::ranges::views::filter(is_even) | std::ranges::views::reverse | std::ranges::views::to_vector;
+//
+//    EXPECT_EQ(expected, result);
+//}
+
 TYPED_TEST_P(CustomCollectionTests, Find_can_be_used_on_const_container)
 {
     const TypeParam container{ .values = {1,2,3,4,5,6,7} };

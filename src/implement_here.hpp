@@ -14,85 +14,59 @@
 
 struct MyContainer
 {
-	struct iterator;
-	struct const_iterator;
+	template<typename T, bool Const = false>
+	struct iterator_base;
 
-	iterator begin() { return iterator{ *this, values.data() }; };
-	iterator end() { return iterator{ *this, values.data() + values.size() }; };
-	const_iterator begin() const { return const_iterator{ begin() }; };
-	const_iterator end() const{ return const_iterator{ end() }; };
-	const_iterator cbegin() const { return const_iterator{ begin() }; };
-	const_iterator cend() const { return const_iterator{ end() }; };
+	using iterator = iterator_base<int>;
+	using const_iterator = iterator_base<int, true>;
+
+	iterator begin() { return iterator{ values.data()}; };
+	iterator end() { return iterator{ values.data() + values.size() }; };
+	const_iterator begin() const { return const_iterator{ values.data()};};
+	const_iterator end() const{ return const_iterator{ values.data() + values.size()};}
+	const_iterator cbegin() const { return const_iterator{ values.data() };};
+	const_iterator cend() const { return const_iterator{ values.data() + values.size()};};
 	std::reverse_iterator<iterator> rbegin() { return std::make_reverse_iterator<iterator>(end()); }
 	std::reverse_iterator<iterator> rend() { return std::make_reverse_iterator<iterator>(begin()); }
 
 	auto operator<=>(const MyContainer&)const = default;
 
-	struct iterator
+	template<typename T, bool Const = false>
+	struct iterator_base
 	{
 		using iterator_category = std::random_access_iterator_tag;
-		using value_type = int;
+		using value_type = T;
 		using difference_type = std::ptrdiff_t;
-		using pointer = value_type*;
-		using reference = value_type&;
+		using pointer = typename std::conditional_t< Const, T const*, T* >;;
+		using reference = typename std::conditional_t< Const, T const&, T& >;;
 
-		iterator(MyContainer& container, pointer position) : container(&container), current_element(position) {}
-		iterator& operator=(const iterator& other) = default;
-		iterator(const iterator& other) = default;
+		iterator_base(pointer current) : current(current) {}
+		iterator_base(const iterator_base& other) = default;
+		iterator_base& operator=(const iterator_base& other) = default;
 
-		iterator& operator++() { ++current_element; return *this; }
-		iterator operator++(int value) { return iterator{*container, current_element + value }; }
-		iterator& operator--() { --current_element; return *this; }
-		iterator operator--(int value) { return iterator{*container, current_element - value }; }
-		friend iterator operator+(const iterator& it, int index) { return iterator{ *it.container, it.current_element + index }; }
-		friend iterator operator+(int index, const iterator& it) { return iterator{ *it.container, it.current_element + index }; }
-		friend iterator operator-(const iterator& it, int index) { return iterator{ *it.container, it.current_element - index }; }
-		friend difference_type operator-(const iterator& it, const iterator& it2) { return it.current_element - it2.current_element; }
+		iterator_base& operator++() { ++current; return *this; }
+		iterator_base operator++(int value) { return iterator_base{ current + value }; }
+		iterator_base& operator--() { --current; return *this; }
+		iterator_base operator--(int value) { return iterator_base{ current - value }; }
+		friend iterator_base operator+(const iterator_base& it, int index) { return iterator_base{ it.current + index }; }
+		friend iterator_base operator+(int index, const iterator_base& it) { return iterator_base{ it.current + index }; }
+		friend iterator_base operator-(const iterator_base& it, int index) { return iterator_base{ it.current - index }; }
+		friend difference_type operator-(const iterator_base& it, const iterator_base& it2) { return it.current - it2.current; }
 
-		iterator& operator+=(int index) { current_element += index; return *this; }
-		iterator& operator-=(int index) { current_element -= index; return *this; }
+		iterator_base& operator+=(int index) { current += index; return *this; }
+		iterator_base& operator-=(int index) { current -= index; return *this; }
 
-		reference operator*() { return *current_element; }
-		reference operator[](size_t pos) { return container->values[pos]; }
+		// This is the tricky part, how can we change the function signature based on a template parameter?
+		// Answer: SFINAE yeaaaay, see this: https://stackoverflow.com/questions/2150192/how-to-avoid-code-duplication-implementing-const-and-non-const-iterators
+		template<bool Is_Const = Const>
+		std::enable_if_t<Is_Const, reference> operator*() const { return *current; }
 
-		const_iterator operator()() const { return const_iterator{*this}; }
+		template<bool Is_Const = Const>
+		std::enable_if_t<!Is_Const, reference> operator*() { return *current; }
 
-		auto operator<=>(const iterator&) const = default;
+		auto operator<=>(const iterator_base&) const = default;
 	private:
-		MyContainer* container;
-		pointer current_element;
-	};
-
-	struct const_iterator
-	{
-		using iterator_category = std::random_access_iterator_tag;
-		using value_type = int;
-		using difference_type = std::ptrdiff_t;
-		using pointer = value_type*;
-		using reference = value_type&;
-
-		const_iterator(const iterator& base) : iter(base){}
-		const_iterator(const const_iterator& other) = default;
-		const_iterator& operator=(const const_iterator& other) = default;
-
-		const_iterator& operator++() { ++iter; return *this; }
-		const_iterator operator++(int value) { return const_iterator{ iter + value }; }
-		const_iterator& operator--() { --iter; return *this; }
-		const_iterator operator--(int value) { return const_iterator{ iter - value }; }
-		friend const_iterator operator+(const const_iterator& it, int index) { return const_iterator{ it.iter + index }; }
-		friend const_iterator operator+(int index, const const_iterator& it) { return const_iterator{ it.iter + index }; }
-		friend const_iterator operator-(const const_iterator& it, int index) { return const_iterator{ it.iter - index }; }
-		friend difference_type operator-(const const_iterator& it, const const_iterator& it2) { return it.iter - it2.iter; }
-
-		const_iterator& operator+=(int index) { iter += index; return *this; }
-		const_iterator& operator-=(int index) { iter -= index; return *this; }
-
-		const value_type& operator*(){ return *iter; }
-		const value_type& operator[](size_t pos){ return iter[pos]; }
-
-		auto operator<=>(const const_iterator&) const = default;
-	private:
-		iterator iter;
+		pointer current;
 	};
 
 	std::vector<int> values;
@@ -106,3 +80,5 @@ struct MyContainer
 // Don't try to dereference an .end iterator even if you never plan to do anything with the element.
 // + takes precedence over any * -> & operators
 // the stl provides you with a template for reverse_iterators: std::reverse_iterator<> no need to implement anything yourself
+// creating const and non const versions without doubling the code is difficult: https://www.boost.org/doc/libs/1_41_0/libs/iterator/doc/iterator_facade.html#tutorial-example , https://stackoverflow.com/questions/2150192/how-to-avoid-code-duplication-implementing-const-and-non-const-iterators
+// Changing the signature of a function based on a template parameter is possible using SFINAE
