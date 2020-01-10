@@ -8,7 +8,7 @@ TYPED_TEST_CASE_P(CustomCollectionTests);
 
 /***************************************************************/
 /* Actual tests */
-TYPED_TEST_P(CustomCollectionTests, After_sort_elements_in_correct_order) 
+TYPED_TEST_P(CustomCollectionTests, Container_can_be_sorted) 
 {
     TypeParam container{ .values = {3,3,3,2,2,2,1,1,1} };
     TypeParam expected_after_sorting{ .values = {1,1,1,2,2,2,3,3,3} };
@@ -41,7 +41,19 @@ TYPED_TEST_P(CustomCollectionTests, Container_is_usable_in_range_based_for)
     EXPECT_EQ(expected, result);
 }
 
-TYPED_TEST_P(CustomCollectionTests, Find_can_be_used_on_container)
+TYPED_TEST_P(CustomCollectionTests, Reverse_iterators_work_as_expected)
+{
+    TypeParam container{ .values = {1,2,3,4,5,6,7} };
+    std::vector<int> expected{ 7,6,5,4,3,2,1 };
+    std::vector<int> result;
+    result.reserve(expected.size());
+
+    std::copy(container.rbegin(), container.rend(), std::back_inserter(result));
+
+    EXPECT_EQ(expected, result);
+}
+
+TYPED_TEST_P(CustomCollectionTests, Find_can_be_used_on_NON_const_container)
 {
     TypeParam container{ .values = {1,2,3,4,5,6,7} };
     const int to_find = 4;
@@ -51,13 +63,25 @@ TYPED_TEST_P(CustomCollectionTests, Find_can_be_used_on_container)
     EXPECT_EQ(*result, to_find);
 }
 
+TYPED_TEST_P(CustomCollectionTests, Find_can_be_used_on_const_container)
+{
+    const TypeParam container{ .values = {1,2,3,4,5,6,7} };
+    const int to_find = 6;
+
+    auto result = std::find(container.begin(), container.end(), to_find);
+
+    EXPECT_EQ(*result, to_find);
+}
+
 /***************************************************************/
 // Register all test names, e.g. Should_Succeed
 REGISTER_TYPED_TEST_CASE_P(CustomCollectionTests,
-    After_sort_elements_in_correct_order,
+    Container_can_be_sorted,
     Sorting_empty_container_should_not_crash,
     Container_is_usable_in_range_based_for,
-    Find_can_be_used_on_container);
+    Find_can_be_used_on_NON_const_container,
+    Reverse_iterators_work_as_expected,
+    Find_can_be_used_on_const_container);
 
 // Now we can instantiate it with our types.
 typedef ::testing::Types<MyContainer> TypesToTest;

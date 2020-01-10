@@ -8,37 +8,25 @@
 // Level 1 -> Iterators for your type useful for a library
 // Level 2 -> Ranges for your type useful for a library
 
-struct SomethingIwantToCompare
-{
-	int value;
-
-	// old approach: bool operator<(...), operator>, operator==, .... boiler plate...
-	// Now we get -> Spaceship
-	// auto operator<=>(const SomethingIwantToCompare&) const = default; // There fixed. ( Note this will implicitly default operator==)
-
-	std::weak_ordering operator<=>(const SomethingIwantToCompare& other) const
-	{
-		if (value < other.value)
-		{
-			return std::weak_ordering::greater;
-		}
-		else if (value > other.value)
-		{
-			return std::weak_ordering::less;
-		}
-		else if (value == other.value)
-		{
-			return std::weak_ordering::equivalent;
-		}
-		return std::weak_ordering::equivalent;
-	}
-
-	bool operator==(const SomethingIwantToCompare& other) const = default; // If we define a custom spaceship operator we need to provide an equality operator
-};
+// Todo restructure, make a bit more sophisticated
+// Tests reverse iterators.
+// Tests const iterators.
 
 struct MyContainer
 {
-	std::vector<int> values;
+	struct iterator;
+	struct const_iterator;
+
+	iterator begin() { return iterator{ *this, values.data() }; };
+	iterator end() { return iterator{ *this, values.data() + values.size() }; };
+	const_iterator begin() const { return const_iterator{ begin() }; };
+	const_iterator end() const{ return const_iterator{ end() }; };
+	const_iterator cbegin() const { return const_iterator{ begin() }; };
+	const_iterator cend() const { return const_iterator{ end() }; };
+	std::reverse_iterator<iterator> rbegin() { return std::make_reverse_iterator<iterator>(end()); }
+	std::reverse_iterator<iterator> rend() { return std::make_reverse_iterator<iterator>(begin()); }
+
+	auto operator<=>(const MyContainer&)const = default;
 
 	struct iterator
 	{
@@ -48,10 +36,9 @@ struct MyContainer
 		using pointer = value_type*;
 		using reference = value_type&;
 
-		iterator(MyContainer& container) : container(&container), current_element(nullptr){}
 		iterator(MyContainer& container, pointer position) : container(&container), current_element(position) {}
-		iterator& operator=(const iterator& other) { container = other.container; current_element = other.current_element; return *this; }
-		iterator(const iterator& other) : container(other.container), current_element(other.current_element) {}
+		iterator& operator=(const iterator& other) = default;
+		iterator(const iterator& other) = default;
 
 		iterator& operator++() { ++current_element; return *this; }
 		iterator operator++(int value) { return iterator{*container, current_element + value }; }
@@ -68,16 +55,47 @@ struct MyContainer
 		reference operator*() { return *current_element; }
 		reference operator[](size_t pos) { return container->values[pos]; }
 
+		const_iterator operator()() const { return const_iterator{*this}; }
+
 		auto operator<=>(const iterator&) const = default;
 	private:
 		MyContainer* container;
 		pointer current_element;
 	};
 
-	iterator begin(){ return iterator{ *this, values.data() }; };
-	iterator end(){ return iterator{ *this, values.data() + values.size() }; };
+	struct const_iterator
+	{
+		using iterator_category = std::random_access_iterator_tag;
+		using value_type = int;
+		using difference_type = std::ptrdiff_t;
+		using pointer = value_type*;
+		using reference = value_type&;
 
-	auto operator<=>(const MyContainer&)const = default;
+		const_iterator(const iterator& base) : iter(base){}
+		const_iterator(const const_iterator& other) = default;
+		const_iterator& operator=(const const_iterator& other) = default;
+
+		const_iterator& operator++() { ++iter; return *this; }
+		const_iterator operator++(int value) { return const_iterator{ iter + value }; }
+		const_iterator& operator--() { --iter; return *this; }
+		const_iterator operator--(int value) { return const_iterator{ iter - value }; }
+		friend const_iterator operator+(const const_iterator& it, int index) { return const_iterator{ it.iter + index }; }
+		friend const_iterator operator+(int index, const const_iterator& it) { return const_iterator{ it.iter + index }; }
+		friend const_iterator operator-(const const_iterator& it, int index) { return const_iterator{ it.iter - index }; }
+		friend difference_type operator-(const const_iterator& it, const const_iterator& it2) { return it.iter - it2.iter; }
+
+		const_iterator& operator+=(int index) { iter += index; return *this; }
+		const_iterator& operator-=(int index) { iter -= index; return *this; }
+
+		const value_type& operator*(){ return *iter; }
+		const value_type& operator[](size_t pos){ return iter[pos]; }
+
+		auto operator<=>(const const_iterator&) const = default;
+	private:
+		iterator iter;
+	};
+
+	std::vector<int> values;
 };
 
 // Learnings;
@@ -87,3 +105,4 @@ struct MyContainer
 // A custom 3 way comparison is not used as overload resolution for equality, reasons are performance, e.g. lexicographical comparison of strings compares each character, while testing for equality you can test for equal sizes first then no loop is required.
 // Don't try to dereference an .end iterator even if you never plan to do anything with the element.
 // + takes precedence over any * -> & operators
+// the stl provides you with a template for reverse_iterators: std::reverse_iterator<> no need to implement anything yourself
