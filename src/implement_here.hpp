@@ -62,9 +62,9 @@ struct MyContainer
 	using iterator = iterator_base<int>;
 	using const_iterator = iterator_base<int, true>;
 
+	// If somebody knows a way to fix this code duplication without const cast, please let me know ;)
 	[[nodiscard]] iterator begin() noexcept { return iterator{ values.data()}; };
 	[[nodiscard]] iterator end()   noexcept { return iterator{ values.data() + values.size() }; };
-	// TODO: can we avoid this duplication? -> should be if const can be created from non const.
 	[[nodiscard]] const_iterator begin() const noexcept { return const_iterator{ values.data()};};
 	[[nodiscard]] const_iterator end()   const noexcept { return const_iterator{ values.data() + values.size()};}
 	[[nodiscard]] const_iterator cbegin() const noexcept { return begin(); };
