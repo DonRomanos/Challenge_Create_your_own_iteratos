@@ -63,6 +63,19 @@ TYPED_TEST_P(CustomCollectionTests, Find_can_be_used_on_NON_const_container)
     EXPECT_EQ(*result, to_find);
 }
 
+TYPED_TEST_P(CustomCollectionTests, Comparison_of_non_const_and_const_iterators_work)
+{
+    TypeParam container{ .values = {1,2,3,4,5,6,7} };
+
+    EXPECT_TRUE(container.cbegin() == container.begin());
+}
+
+TYPED_TEST_P(CustomCollectionTests, Conversion_of_iterators_only_works_from_non_const_to_const)
+{
+    EXPECT_TRUE((std::is_convertible<TypeParam::iterator, TypeParam::const_iterator>::value));
+    EXPECT_FALSE((std::is_convertible<TypeParam::const_iterator, TypeParam::iterator>::value));
+}
+
 // My Compiler does not have support for ranges yet...
 //TYPED_TEST_P(CustomCollectionTests, Container_works_with_ranges)
 //{
@@ -94,7 +107,9 @@ REGISTER_TYPED_TEST_CASE_P(CustomCollectionTests,
     Container_is_usable_in_range_based_for,
     Find_can_be_used_on_NON_const_container,
     Reverse_iterators_work_as_expected,
-    Find_can_be_used_on_const_container);
+    Find_can_be_used_on_const_container,
+    Comparison_of_non_const_and_const_iterators_work,
+    Conversion_of_iterators_only_works_from_non_const_to_const);
 
 // Now we can instantiate it with our types.
 typedef ::testing::Types<MyContainer> TypesToTest;
