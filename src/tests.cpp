@@ -112,7 +112,7 @@ REGISTER_TYPED_TEST_CASE_P(CustomCollectionTests,
     Conversion_of_iterators_only_works_from_non_const_to_const);
 
 // Now we can instantiate it with our types.
-typedef ::testing::Types<MyContainer> TypesToTest;
+using  TypesToTest = ::testing::Types <reference::MyContainer, SomeReallySimpleContainer> ; // I made the reference first so you see that its working.
 INSTANTIATE_TYPED_TEST_CASE_P( YouWinIfAllOfTheseAreGreen, CustomCollectionTests, TypesToTest);
 
 // Had some Problems with the conan cmake_find_package generator, 
